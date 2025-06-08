@@ -7,11 +7,13 @@ import { fetchProductImage } from "@/app/actions"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useToast } from "@/hooks/use-toast"
+import { useProducts } from "@/context/product-context"
 
 export function LinkForm() {
   const [amazonLink, setAmazonLink] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const { toast } = useToast()
+  const { refreshProducts } = useProducts()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -41,6 +43,8 @@ export function LinkForm() {
           description: "Product image fetched successfully",
         })
         setAmazonLink("")
+        // Refresh the products list after successful fetch
+        await refreshProducts()
       }
     } catch (error) {
       toast({

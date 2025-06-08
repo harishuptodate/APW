@@ -94,12 +94,6 @@ export async function fetchProductImage(amazonUrl: string) {
       productsStore = productsStore.slice(0, 10)
     }
 
-    // Dispatch a custom event to notify the client
-    // This is a workaround since we can't directly update client state from server actions
-    if (typeof window !== "undefined") {
-      window.dispatchEvent(new Event("storage-updated"))
-    }
-
     return { success: true, product }
   } catch (error) {
     console.error("Error fetching product:", error)

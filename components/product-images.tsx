@@ -1,44 +1,12 @@
 "use client"
 
-import { useEffect, useState } from "react"
 import Image from "next/image"
-import { getStoredProducts } from "@/app/actions"
 import { Button } from "@/components/ui/button"
 import { Trash2 } from "lucide-react"
-
-interface Product {
-  id: string
-  title: string
-  imageUrl: string
-  amazonUrl: string
-}
+import { useProducts } from "@/context/product-context"
 
 export function ProductImages() {
-  const [products, setProducts] = useState<Product[]>([])
-
-  useEffect(() => {
-    const loadProducts = async () => {
-      const storedProducts = await getStoredProducts()
-      setProducts(storedProducts)
-    }
-
-    loadProducts()
-  }, [])
-
-  // This will be called after a new product is added
-  useEffect(() => {
-    const handleStorageChange = async () => {
-      const storedProducts = await getStoredProducts()
-      setProducts(storedProducts)
-    }
-
-    // Create a custom event to listen for storage updates
-    window.addEventListener("storage-updated", handleStorageChange)
-
-    return () => {
-      window.removeEventListener("storage-updated", handleStorageChange)
-    }
-  }, [])
+  const { products } = useProducts()
 
   if (products.length === 0) {
     return (
@@ -72,9 +40,6 @@ export function ProductImages() {
                   className="text-red-500 hover:text-red-700"
                   onClick={async () => {
                     // We would implement a remove function here
-                    // For now, just refresh the products
-                    const storedProducts = await getStoredProducts()
-                    setProducts(storedProducts)
                   }}
                 >
                   <Trash2 className="h-4 w-4" />
