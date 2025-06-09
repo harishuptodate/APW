@@ -8,9 +8,14 @@ export default function Home() {
       <div className="container mx-auto px-4 py-12">
         <div className="max-w-3xl mx-auto">
           <h1 className="text-3xl font-bold text-center mb-2">Amazon Product Image Fetcher</h1>
-          <p className="text-gray-600 text-center mb-8">
+          <p className="text-gray-600 text-center mb-4">
             Paste Amazon product links (short or long format) to fetch and display product images
           </p>
+          <div className="text-center mb-8">
+            <a href="/api-docs" className="text-blue-600 hover:underline text-sm">
+              📖 View API Documentation
+            </a>
+          </div>
 
           <ProductProvider>
             <div className="bg-white rounded-lg shadow-md p-6">
