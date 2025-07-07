@@ -13,16 +13,25 @@ interface Product {
 interface ProductContextType {
   products: Product[]
   refreshProducts: () => Promise<void>
+  isLoading: boolean
 }
 
 const ProductContext = createContext<ProductContextType | undefined>(undefined)
 
 export function ProductProvider({ children }: { children: ReactNode }) {
   const [products, setProducts] = useState<Product[]>([])
+  const [isLoading, setIsLoading] = useState(true)
 
   const refreshProducts = async () => {
-    const storedProducts = await getStoredProducts()
-    setProducts(storedProducts)
+    try {
+      setIsLoading(true)
+      const storedProducts = await getStoredProducts()
+      setProducts(storedProducts)
+    } catch (error) {
+      console.error("Error refreshing products:", error)
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   // Load products on initial mount
@@ -30,7 +39,7 @@ export function ProductProvider({ children }: { children: ReactNode }) {
     refreshProducts()
   }, [])
 
-  return <ProductContext.Provider value={{ products, refreshProducts }}>{children}</ProductContext.Provider>
+  return <ProductContext.Provider value={{ products, refreshProducts, isLoading }}>{children}</ProductContext.Provider>
 }
 
 export function useProducts() {

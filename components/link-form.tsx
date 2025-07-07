@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useToast } from "@/hooks/use-toast"
 import { useProducts } from "@/context/product-context"
+import { addProduct } from "@/app/actions"
 
 export function LinkForm() {
   const [amazonLink, setAmazonLink] = useState("")
@@ -40,15 +41,31 @@ export function LinkForm() {
           variant: "destructive",
         })
       } else {
-        toast({
-          title: "Success",
-          description: "Product image fetched successfully",
+        // Store the product using server action
+        const storeResult = await addProduct({
+          title: result.data.title,
+          imageUrl: result.data.imageUrl,
+          amazonUrl: result.data.amazonUrl,
         })
-        setAmazonLink("")
-        // Refresh the products list after successful fetch
-        await refreshProducts()
+
+        if (storeResult.success) {
+          toast({
+            title: "Success",
+            description: "Product image fetched and saved successfully",
+          })
+          setAmazonLink("")
+          // Refresh the products list after successful fetch and store
+          await refreshProducts()
+        } else {
+          toast({
+            title: "Warning",
+            description: "Image fetched but failed to save locally",
+            variant: "destructive",
+          })
+        }
       }
     } catch (error) {
+      console.error("Error:", error)
       toast({
         title: "Error",
         description: "Network error. Please check your connection and try again.",
