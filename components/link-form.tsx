@@ -3,7 +3,6 @@
 import type React from "react"
 
 import { useState } from "react"
-import { fetchProductImage } from "@/app/actions"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useToast } from "@/hooks/use-toast"
@@ -29,12 +28,15 @@ export function LinkForm() {
 
     try {
       setIsLoading(true)
-      const result = await fetchProductImage(amazonLink)
 
-      if (result.error) {
+      // Use GET request to our API endpoint
+      const response = await fetch(`/api/fetch-image?url=${encodeURIComponent(amazonLink)}&retries=3`)
+      const result = await response.json()
+
+      if (!response.ok || !result.success) {
         toast({
           title: "Error",
-          description: result.error,
+          description: result.error || "Failed to fetch product image",
           variant: "destructive",
         })
       } else {
@@ -49,7 +51,7 @@ export function LinkForm() {
     } catch (error) {
       toast({
         title: "Error",
-        description: "Failed to fetch product image",
+        description: "Network error. Please check your connection and try again.",
         variant: "destructive",
       })
     } finally {
@@ -76,6 +78,12 @@ export function LinkForm() {
       <Button type="submit" className="w-full" disabled={isLoading}>
         {isLoading ? "Fetching..." : "Fetch Product Image"}
       </Button>
+
+      {isLoading && (
+        <p className="text-sm text-gray-500 text-center">
+          This may take a few seconds... Amazon sometimes requires multiple attempts.
+        </p>
+      )}
     </form>
   )
 }
