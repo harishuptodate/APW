@@ -1,30 +1,110 @@
-# Amazon product website
+# Amazon Image Fetcher API Documentation
 
-*Automatically synced with your [v0.dev](https://v0.dev) deployments*
+## API Endpoint
 
-[![Deployed on Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black?style=for-the-badge&logo=vercel)](https://vercel.com/harishuptodates-projects/v0-amazon-product-website)
-[![Built with v0](https://img.shields.io/badge/Built%20with-v0.dev-black?style=for-the-badge)](https://v0.dev/chat/projects/TWjfCtJzvkx)
+Use this API to fetch product images from Amazon URLs programmatically.
 
-## Overview
+```
+POST /api/fetch-image
+GET /api/fetch-image?url=AMAZON_URL
+```
 
-This repository will stay in sync with your deployed chats on [v0.dev](https://v0.dev).
-Any changes you make to your deployed app will be automatically pushed to this repository from [v0.dev](https://v0.dev).
+---
 
-## Deployment
+## POST Request
 
-Your project is live at:
+### Request Body
 
-**[https://vercel.com/harishuptodates-projects/v0-amazon-product-website](https://vercel.com/harishuptodates-projects/v0-amazon-product-website)**
+```json
+{
+  "amazonUrl": "https://www.amazon.com/dp/B08N5WRWNW"
+}
+```
 
-## Build your app
+### Example using cURL
 
-Continue building your app on:
+```bash
+curl -X POST https://your-domain.com/api/fetch-image \
+  -H "Content-Type: application/json" \
+  -d '{"amazonUrl": "https://www.amazon.com/dp/B08N5WRWNW"}'
+```
 
-**[https://v0.dev/chat/projects/TWjfCtJzvkx](https://v0.dev/chat/projects/TWjfCtJzvkx)**
+### Example using JavaScript (fetch)
 
-## How It Works
+```javascript
+const response = await fetch('https://your-domain.com/api/fetch-image', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({
+    amazonUrl: 'https://www.amazon.com/dp/B08N5WRWNW'
+  })
+});
 
-1. Create and modify your project using [v0.dev](https://v0.dev)
-2. Deploy your chats from the v0 interface
-3. Changes are automatically pushed to this repository
-4. Vercel deploys the latest version from this repository
+const data = await response.json();
+console.log(data.data.imageUrl);
+```
+
+---
+
+## GET Request
+
+### Query Parameters
+
+- `url` – The Amazon product URL (required)
+
+### Example
+
+```
+GET https://your-domain.com/api/fetch-image?url=https://www.amazon.com/dp/B08N5WRWNW
+```
+
+### Example using cURL
+
+```bash
+curl "https://your-domain.com/api/fetch-image?url=https://www.amazon.com/dp/B08N5WRWNW"
+```
+
+---
+
+## Response Format
+
+### Success Response
+
+```json
+{
+  "success": true,
+  "data": {
+    "imageUrl": "https://m.media-amazon.com/images/I/71abc123def.jpg",
+    "title": "Product Title",
+    "amazonUrl": "https://www.amazon.com/dp/B08N5WRWNW"
+  }
+}
+```
+
+### Error Response
+
+```json
+{
+  "error": "Please provide a valid Amazon product URL"
+}
+```
+
+---
+
+## Supported URL Formats
+
+- Full Amazon URLs: `https://www.amazon.com/dp/B08N5WRWNW`
+- Short Amazon URLs: `https://amzn.to/3abc123`
+- Amazon URLs with additional parameters
+- International Amazon domains (`.co.uk`, `.de`, `.fr`, etc.)
+
+---
+
+## Rate Limiting & Best Practices
+
+- Be respectful with request frequency to avoid being blocked by Amazon
+- Cache results when possible to reduce redundant requests
+- Handle errors gracefully in your application
+- The API returns high-resolution product images when available
