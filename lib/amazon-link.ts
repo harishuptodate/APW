@@ -31,9 +31,9 @@ export function cleanAmazonProductUrl(
 ): string {
   const url = extractUrl(value)
 
-  // if (!isAmazonIndiaHost(url.hostname.toLowerCase())) {
-  //   throw new Error("Please provide a valid Amazon.in product URL")
-  // }
+  if (!isAmazonIndiaHost(url.hostname.toLowerCase())) {
+    throw new Error("Please provide a valid Amazon.in product URL")
+  }
 
   const asin = url.pathname.match(ASIN_PATH_PATTERN)?.[1]
 
