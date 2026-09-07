@@ -15,6 +15,14 @@ export function LinkForm() {
   const { toast } = useToast()
   const { refreshProducts } = useProducts()
 
+  const getErrorTitle = (code?: string) => {
+    if (code === "captcha" || code === "blocked") {
+      return "Amazon blocked the request"
+    }
+
+    return "Error"
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
@@ -36,7 +44,7 @@ export function LinkForm() {
 
       if (!response.ok || !result.success) {
         toast({
-          title: "Error",
+          title: getErrorTitle(result.code),
           description: result.error || "Failed to fetch product image",
           variant: "destructive",
         })

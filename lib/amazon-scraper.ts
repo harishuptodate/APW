@@ -6,6 +6,40 @@ export interface ProductData {
   amazonUrl: string
 }
 
+export type AmazonScrapeErrorCode =
+  | "invalid_url"
+  | "short_url_resolution_failed"
+  | "timeout"
+  | "blocked"
+  | "captcha"
+  | "upstream_http_error"
+  | "image_not_found"
+  | "unexpected"
+
+export class AmazonScrapeError extends Error {
+  code: AmazonScrapeErrorCode
+  statusCode: number
+  retryable: boolean
+  upstreamStatus?: number
+
+  constructor(
+    message: string,
+    options: {
+      code: AmazonScrapeErrorCode
+      statusCode: number
+      retryable: boolean
+      upstreamStatus?: number
+    },
+  ) {
+    super(message)
+    this.name = "AmazonScrapeError"
+    this.code = options.code
+    this.statusCode = options.statusCode
+    this.retryable = options.retryable
+    this.upstreamStatus = options.upstreamStatus
+  }
+}
+
 // Multiple User-Agent strings to rotate
 const USER_AGENTS = [
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
@@ -23,10 +57,54 @@ function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
+function createAmazonScrapeError(
+  message: string,
+  options: {
+    code: AmazonScrapeErrorCode
+    statusCode: number
+    retryable: boolean
+    upstreamStatus?: number
+  },
+): AmazonScrapeError {
+  return new AmazonScrapeError(message, options)
+}
+
+export function normalizeAmazonScrapeError(error: unknown): AmazonScrapeError {
+  if (error instanceof AmazonScrapeError) {
+    return error
+  }
+
+  if (error instanceof Error && error.name === "AbortError") {
+    return createAmazonScrapeError("Amazon request timed out. Please try again.", {
+      code: "timeout",
+      statusCode: 408,
+      retryable: true,
+    })
+  }
+
+  if (error instanceof Error) {
+    return createAmazonScrapeError(error.message, {
+      code: "unexpected",
+      statusCode: 500,
+      retryable: false,
+    })
+  }
+
+  return createAmazonScrapeError("An unexpected error occurred while fetching the product", {
+    code: "unexpected",
+    statusCode: 500,
+    retryable: false,
+  })
+}
+
 export async function scrapeAmazonProduct(amazonUrl: string): Promise<ProductData> {
   // Validate the URL is from Amazon
   if (!amazonUrl.includes("amazon.") && !amazonUrl.includes("amzn.to")) {
-    throw new Error("Please provide a valid Amazon product URL")
+    throw createAmazonScrapeError("Please provide a valid Amazon product URL", {
+      code: "invalid_url",
+      statusCode: 400,
+      retryable: false,
+    })
   }
 
   let finalUrl = amazonUrl
@@ -47,9 +125,13 @@ export async function scrapeAmazonProduct(amazonUrl: string): Promise<ProductDat
         })
         clearTimeout(timeoutId)
         finalUrl = response.url
-      } catch (error) {
+      } catch {
         clearTimeout(timeoutId)
-        throw new Error("Failed to resolve short URL")
+        throw createAmazonScrapeError("Failed to resolve short URL", {
+          code: "short_url_resolution_failed",
+          statusCode: 502,
+          retryable: true,
+        })
       }
     }
 
@@ -75,17 +157,31 @@ export async function scrapeAmazonProduct(amazonUrl: string): Promise<ProductDat
     clearTimeout(timeoutId)
 
     if (!response.ok) {
-      if (response.status === 503) {
-        throw new Error("Amazon is temporarily blocking requests. Please try again later.")
+      if (response.status === 429 || response.status === 503) {
+        throw createAmazonScrapeError("Amazon is temporarily blocking requests. Please try again later.", {
+          code: "blocked",
+          statusCode: 429,
+          retryable: true,
+          upstreamStatus: response.status,
+        })
       }
-      throw new Error(`Failed to fetch product page (Status: ${response.status})`)
+      throw createAmazonScrapeError(`Failed to fetch product page (Status: ${response.status})`, {
+        code: "upstream_http_error",
+        statusCode: 502,
+        retryable: response.status >= 500,
+        upstreamStatus: response.status,
+      })
     }
 
     const html = await response.text()
 
     // Check if we got a CAPTCHA page
     if (html.includes("captcha") || html.includes("Robot Check")) {
-      throw new Error("Amazon CAPTCHA detected. Please try again later or from a different IP.")
+      throw createAmazonScrapeError("Amazon CAPTCHA detected. Please try again later or from a different IP.", {
+        code: "captcha",
+        statusCode: 429,
+        retryable: false,
+      })
     }
 
     const root = parse(html)
@@ -180,8 +276,13 @@ export async function scrapeAmazonProduct(amazonUrl: string): Promise<ProductDat
     }
 
     if (!imageUrl) {
-      throw new Error(
+      throw createAmazonScrapeError(
         "Could not find product image. The page structure may have changed or the product may not have images.",
+        {
+          code: "image_not_found",
+          statusCode: 422,
+          retryable: false,
+        },
       )
     }
 
@@ -194,9 +295,6 @@ export async function scrapeAmazonProduct(amazonUrl: string): Promise<ProductDat
       amazonUrl: finalUrl,
     }
   } catch (error) {
-    if (error instanceof Error) {
-      throw error
-    }
-    throw new Error("An unexpected error occurred while fetching the product")
+    throw normalizeAmazonScrapeError(error)
   }
 }

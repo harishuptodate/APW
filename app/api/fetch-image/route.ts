@@ -1,16 +1,28 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { scrapeAmazonProduct } from "@/lib/amazon-scraper"
+import { AmazonScrapeError, normalizeAmazonScrapeError, scrapeAmazonProduct, type ProductData } from "@/lib/amazon-scraper"
 
-async function fetchWithRetry(amazonUrl: string, maxRetries = 3): Promise<any> {
-  let lastError: Error
+type FetchImageErrorResponse = {
+  error: string
+  code: AmazonScrapeError["code"]
+  retryable: boolean
+  attempts: number
+  upstreamStatus?: number
+}
+
+async function fetchWithRetry(amazonUrl: string, maxRetries = 3): Promise<ProductData> {
+  let lastError: AmazonScrapeError | null = null
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
       const result = await scrapeAmazonProduct(amazonUrl)
       return result
     } catch (error) {
-      lastError = error as Error
-      console.log(`Attempt ${attempt} failed:`, error)
+      lastError = normalizeAmazonScrapeError(error)
+      console.log(`Attempt ${attempt} failed [${lastError.code}]`, lastError.message)
+
+      if (!lastError.retryable) {
+        break
+      }
 
       if (attempt < maxRetries) {
         // Wait longer between retries (exponential backoff)
@@ -20,19 +32,42 @@ async function fetchWithRetry(amazonUrl: string, maxRetries = 3): Promise<any> {
     }
   }
 
-  throw lastError!
+  throw lastError ?? new AmazonScrapeError("Failed to process the Amazon link", {
+    code: "unexpected",
+    statusCode: 500,
+    retryable: false,
+  })
+}
+
+function createErrorResponse(error: unknown, attempts: number) {
+  const normalizedError = normalizeAmazonScrapeError(error)
+  const responseBody: FetchImageErrorResponse = {
+    error: normalizedError.message,
+    code: normalizedError.code,
+    retryable: normalizedError.retryable,
+    attempts,
+  }
+
+  if (normalizedError.upstreamStatus) {
+    responseBody.upstreamStatus = normalizedError.upstreamStatus
+  }
+
+  return NextResponse.json(responseBody, { status: normalizedError.statusCode })
 }
 
 export async function POST(request: NextRequest) {
+  let retries = 2
+
   try {
     const body = await request.json()
-    const { amazonUrl, retries = 2 } = body
+    const { amazonUrl, retries: retryCount = 2 } = body
+    retries = Math.min(retryCount, 3)
 
     if (!amazonUrl) {
       return NextResponse.json({ error: "Amazon URL is required" }, { status: 400 })
     }
 
-    const productData = await fetchWithRetry(amazonUrl, Math.min(retries, 3))
+    const productData = await fetchWithRetry(amazonUrl, retries)
 
     return NextResponse.json({
       success: true,
@@ -44,25 +79,14 @@ export async function POST(request: NextRequest) {
     })
   } catch (error) {
     console.error("Error fetching product:", error)
-
-    const errorMessage = error instanceof Error ? error.message : "Failed to process the Amazon link"
-
-    // Provide more specific error codes
-    let statusCode = 500
-    if (errorMessage.includes("CAPTCHA") || errorMessage.includes("blocking")) {
-      statusCode = 429 // Too Many Requests
-    } else if (errorMessage.includes("timeout")) {
-      statusCode = 408 // Request Timeout
-    }
-
-    return NextResponse.json({ error: errorMessage }, { status: statusCode })
+    return createErrorResponse(error, retries)
   }
 }
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams
   const amazonUrl = searchParams.get("url")
-  const retries = Number.parseInt(searchParams.get("retries") || "2")
+  const retries = Math.min(Number.parseInt(searchParams.get("retries") || "2"), 3)
 
   if (!amazonUrl) {
     return NextResponse.json({ error: "Amazon URL is required as 'url' query parameter" }, { status: 400 })
@@ -81,16 +105,6 @@ export async function GET(request: NextRequest) {
     })
   } catch (error) {
     console.error("Error fetching product:", error)
-
-    const errorMessage = error instanceof Error ? error.message : "Failed to process the Amazon link"
-
-    let statusCode = 500
-    if (errorMessage.includes("CAPTCHA") || errorMessage.includes("blocking")) {
-      statusCode = 429
-    } else if (errorMessage.includes("timeout")) {
-      statusCode = 408
-    }
-
-    return NextResponse.json({ error: errorMessage }, { status: statusCode })
+    return createErrorResponse(error, retries)
   }
 }
