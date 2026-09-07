@@ -1,4 +1,5 @@
 import { parse } from "node-html-parser"
+import { cleanAmazonImageUrl, cleanAmazonProductUrl, isAmazonShortUrl } from "@/lib/amazon-link"
 
 export interface ProductData {
   title: string
@@ -98,20 +99,11 @@ export function normalizeAmazonScrapeError(error: unknown): AmazonScrapeError {
 }
 
 export async function scrapeAmazonProduct(amazonUrl: string): Promise<ProductData> {
-  // Validate the URL is from Amazon
-  if (!amazonUrl.includes("amazon.") && !amazonUrl.includes("amzn.to")) {
-    throw createAmazonScrapeError("Please provide a valid Amazon product URL", {
-      code: "invalid_url",
-      statusCode: 400,
-      retryable: false,
-    })
-  }
-
-  let finalUrl = amazonUrl
-
   try {
+    let finalUrl: string
+
     // Handle short links (amzn.to) with timeout
-    if (amazonUrl.includes("amzn.to")) {
+    if (isAmazonShortUrl(amazonUrl)) {
       const controller = new AbortController()
       const timeoutId = setTimeout(() => controller.abort(), 10000) // 10 second timeout
 
@@ -124,7 +116,7 @@ export async function scrapeAmazonProduct(amazonUrl: string): Promise<ProductDat
           },
         })
         clearTimeout(timeoutId)
-        finalUrl = response.url
+        finalUrl = cleanAmazonProductUrl(response.url)
       } catch {
         clearTimeout(timeoutId)
         throw createAmazonScrapeError("Failed to resolve short URL", {
@@ -133,6 +125,8 @@ export async function scrapeAmazonProduct(amazonUrl: string): Promise<ProductDat
           retryable: true,
         })
       }
+    } else {
+      finalUrl = cleanAmazonProductUrl(amazonUrl)
     }
 
     // Add small delay to avoid rate limiting
@@ -287,7 +281,7 @@ export async function scrapeAmazonProduct(amazonUrl: string): Promise<ProductDat
     }
 
     // Clean up the image URL (remove size restrictions for higher quality)
-    imageUrl = imageUrl.replace(/\._[A-Z]{2}\d+_/, ".")
+    imageUrl = cleanAmazonImageUrl(imageUrl)
 
     return {
       title,
@@ -295,6 +289,22 @@ export async function scrapeAmazonProduct(amazonUrl: string): Promise<ProductDat
       amazonUrl: finalUrl,
     }
   } catch (error) {
+    if (error instanceof Error && error.message.includes("Amazon.in")) {
+      throw createAmazonScrapeError(error.message, {
+        code: "invalid_url",
+        statusCode: 400,
+        retryable: false,
+      })
+    }
+
+    if (error instanceof Error && error.message.includes("ASIN")) {
+      throw createAmazonScrapeError(error.message, {
+        code: "invalid_url",
+        statusCode: 400,
+        retryable: false,
+      })
+    }
+
     throw normalizeAmazonScrapeError(error)
   }
 }

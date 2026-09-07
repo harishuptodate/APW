@@ -6,7 +6,10 @@ export default function ApiDocs() {
 
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">
           <h2 className="text-2xl font-semibold mb-4">API Endpoint</h2>
-          <p className="text-gray-600 mb-4">Use this API to fetch product images from Amazon URLs programmatically.</p>
+          <p className="text-gray-600 mb-4">
+            Fetch product images from Amazon India URLs. Incoming tracking parameters are replaced with the configured
+            official affiliate tag.
+          </p>
 
           <div className="bg-gray-100 p-4 rounded-md mb-4">
             <code className="text-sm">POST /api/fetch-image</code>
@@ -21,7 +24,7 @@ export default function ApiDocs() {
           <h4 className="font-medium mb-2">Request Body:</h4>
           <pre className="bg-gray-100 p-4 rounded-md mb-4 overflow-x-auto">
             {`{
-  "amazonUrl": "https://www.amazon.com/dp/B08N5WRWNW"
+  "amazonUrl": "https://www.amazon.in/dp/B08N5WRWNW"
 }`}
           </pre>
 
@@ -29,7 +32,7 @@ export default function ApiDocs() {
           <pre className="bg-gray-100 p-4 rounded-md mb-4 overflow-x-auto">
             {`curl -X POST https://your-domain.com/api/fetch-image \\
   -H "Content-Type: application/json" \\
-  -d '{"amazonUrl": "https://www.amazon.com/dp/B08N5WRWNW"}'`}
+  -d '{"amazonUrl": "https://www.amazon.in/dp/B08N5WRWNW"}'`}
           </pre>
 
           <h4 className="font-medium mb-2">Example using JavaScript fetch:</h4>
@@ -40,7 +43,7 @@ export default function ApiDocs() {
     'Content-Type': 'application/json',
   },
   body: JSON.stringify({
-    amazonUrl: 'https://www.amazon.com/dp/B08N5WRWNW'
+    amazonUrl: 'https://www.amazon.in/dp/B08N5WRWNW'
   })
 });
 
@@ -61,12 +64,12 @@ console.log(data.data.imageUrl);`}
 
           <h4 className="font-medium mb-2">Example:</h4>
           <pre className="bg-gray-100 p-4 rounded-md mb-4 overflow-x-auto">
-            {`GET https://your-domain.com/api/fetch-image?url=https://www.amazon.com/dp/B08N5WRWNW`}
+            {`GET https://your-domain.com/api/fetch-image?url=https://www.amazon.in/dp/B08N5WRWNW`}
           </pre>
 
           <h4 className="font-medium mb-2">Example using cURL:</h4>
           <pre className="bg-gray-100 p-4 rounded-md mb-4 overflow-x-auto">
-            {`curl "https://your-domain.com/api/fetch-image?url=https://www.amazon.com/dp/B08N5WRWNW"`}
+            {`curl "https://your-domain.com/api/fetch-image?url=https://www.amazon.in/dp/B08N5WRWNW"`}
           </pre>
         </div>
 
@@ -80,7 +83,7 @@ console.log(data.data.imageUrl);`}
   "data": {
     "imageUrl": "https://m.media-amazon.com/images/I/71abc123def.jpg",
     "title": "Product Title",
-    "amazonUrl": "https://www.amazon.com/dp/B08N5WRWNW"
+    "amazonUrl": "https://www.amazon.in/dp/B08N5WRWNW?tag=harishch-21"
   }
 }`}
           </pre>
@@ -88,7 +91,7 @@ console.log(data.data.imageUrl);`}
           <h4 className="font-medium mb-2">Error Response:</h4>
           <pre className="bg-gray-100 p-4 rounded-md mb-4 overflow-x-auto">
             {`{
-  "error": "Please provide a valid Amazon product URL"
+  "error": "Please provide a valid Amazon.in product URL"
 }`}
           </pre>
         </div>
@@ -97,13 +100,13 @@ console.log(data.data.imageUrl);`}
           <h3 className="text-xl font-semibold mb-4">Supported URL Formats</h3>
           <ul className="list-disc list-inside space-y-2">
             <li>
-              Full Amazon URLs: <code>https://www.amazon.com/dp/B08N5WRWNW</code>
+              Full Amazon India URLs: <code>https://www.amazon.in/dp/B08N5WRWNW</code>
             </li>
             <li>
               Short Amazon URLs: <code>https://amzn.to/3abc123</code>
             </li>
             <li>Amazon URLs with additional parameters</li>
-            <li>International Amazon domains (.co.uk, .de, .fr, etc.)</li>
+            <li>Common ASIN paths such as /dp/ASIN, /gp/product/ASIN, and /gp/aw/d/ASIN</li>
           </ul>
         </div>
 

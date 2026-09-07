@@ -93,7 +93,7 @@ export function LinkForm() {
         <Input
           id="amazon-link"
           type="text"
-          placeholder="https://www.amazon.com/... or https://amzn.to/..."
+          placeholder="https://www.amazon.in/dp/B0FNDMZ3RN... or https://amzn.to/..."
           value={amazonLink}
           onChange={(e) => setAmazonLink(e.target.value)}
           className="w-full"

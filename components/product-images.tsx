@@ -18,7 +18,11 @@ export function ProductImages() {
     setDeletingIds((prev) => new Set(prev).add(id))
     await deleteProduct(id)
     await refreshProducts()
-    setDeletingIds((prev) => new Set(prev).delete(id))
+    setDeletingIds((prev) => {
+      const next = new Set(prev)
+      next.delete(id)
+      return next
+    })
     toast({
       title: "Success",
       description: "Product deleted successfully",

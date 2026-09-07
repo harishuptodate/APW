@@ -4,6 +4,8 @@
 
 Use this API to fetch product images from Amazon URLs programmatically.
 
+Set `AMAZON_AFFILIATE_TAG` in the deployment environment to your official Amazon India store tag. It defaults to `harishch-21`. Incoming tracking parameters are discarded, and saved product links use only the ASIN and this configured tag.
+
 ```
 POST /api/fetch-image
 GET /api/fetch-image?url=AMAZON_URL
@@ -17,7 +19,7 @@ GET /api/fetch-image?url=AMAZON_URL
 
 ```json
 {
-  "amazonUrl": "https://www.amazon.com/dp/B08N5WRWNW"
+  "amazonUrl": "https://www.amazon.in/dp/B08N5WRWNW"
 }
 ```
 
@@ -26,7 +28,7 @@ GET /api/fetch-image?url=AMAZON_URL
 ```bash
 curl -X POST https://your-domain.com/api/fetch-image \
   -H "Content-Type: application/json" \
-  -d '{"amazonUrl": "https://www.amazon.com/dp/B08N5WRWNW"}'
+  -d '{"amazonUrl": "https://www.amazon.in/dp/B08N5WRWNW"}'
 ```
 
 ### Example using JavaScript (fetch)
@@ -38,7 +40,7 @@ const response = await fetch('https://your-domain.com/api/fetch-image', {
     'Content-Type': 'application/json',
   },
   body: JSON.stringify({
-    amazonUrl: 'https://www.amazon.com/dp/B08N5WRWNW'
+    amazonUrl: 'https://www.amazon.in/dp/B08N5WRWNW'
   })
 });
 
@@ -57,13 +59,13 @@ console.log(data.data.imageUrl);
 ### Example
 
 ```
-GET https://your-domain.com/api/fetch-image?url=https://www.amazon.com/dp/B08N5WRWNW
+GET https://your-domain.com/api/fetch-image?url=https://www.amazon.in/dp/B08N5WRWNW
 ```
 
 ### Example using cURL
 
 ```bash
-curl "https://your-domain.com/api/fetch-image?url=https://www.amazon.com/dp/B08N5WRWNW"
+curl "https://your-domain.com/api/fetch-image?url=https://www.amazon.in/dp/B08N5WRWNW"
 ```
 
 ---
@@ -78,7 +80,7 @@ curl "https://your-domain.com/api/fetch-image?url=https://www.amazon.com/dp/B08N
   "data": {
     "imageUrl": "https://m.media-amazon.com/images/I/71abc123def.jpg",
     "title": "Product Title",
-    "amazonUrl": "https://www.amazon.com/dp/B08N5WRWNW"
+    "amazonUrl": "https://www.amazon.in/dp/B08N5WRWNW?tag=harishch-21"
   }
 }
 ```
@@ -87,7 +89,7 @@ curl "https://your-domain.com/api/fetch-image?url=https://www.amazon.com/dp/B08N
 
 ```json
 {
-  "error": "Please provide a valid Amazon product URL"
+  "error": "Please provide a valid Amazon.in product URL"
 }
 ```
 
@@ -95,10 +97,10 @@ curl "https://your-domain.com/api/fetch-image?url=https://www.amazon.com/dp/B08N
 
 ## Supported URL Formats
 
-- Full Amazon URLs: `https://www.amazon.com/dp/B08N5WRWNW`
+- Full Amazon India URLs: `https://www.amazon.in/dp/B08N5WRWNW`
 - Short Amazon URLs: `https://amzn.to/3abc123`
 - Amazon URLs with additional parameters
-- International Amazon domains (`.co.uk`, `.de`, `.fr`, etc.)
+- Common ASIN paths such as `/dp/ASIN`, `/gp/product/ASIN`, and `/gp/aw/d/ASIN`
 
 ---
 
