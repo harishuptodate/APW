@@ -1,5 +1,25 @@
 # Amazon Image Fetcher API Documentation
 
+## Deploy on Render
+
+Create a Render Blueprint connected to this repository to use `render.yaml`.
+It runs the frontend, API routes, and server actions together as one Next.js
+Node web service. No separate backend service or frontend API URL is needed.
+
+For an existing Render web service, use:
+
+- Build command: `pnpm install --frozen-lockfile && pnpm build`
+- Start command: `pnpm start --hostname 0.0.0.0 --port $PORT`
+- Node version: `22`
+- Health check path: `/api/health`
+- Environment variable: `AMAZON_AFFILIATE_TAG` set to your Amazon India store tag
+
+`GET /api/health` returns HTTP 200 with `{"status":"ok"}` and is not cached.
+It checks that the app is responding without requesting Amazon pages.
+
+The existing product store is in server memory and resets on restart or deploy.
+Amazon scraping can still fail due to upstream blocking or CAPTCHA on any host.
+
 ## API Endpoint
 
 Use this API to fetch product images from Amazon URLs programmatically.

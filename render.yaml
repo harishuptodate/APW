@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: amazon-image-fetcher
+    runtime: node
+    plan: free
+    buildCommand: pnpm install --frozen-lockfile && pnpm build
+    startCommand: pnpm start --hostname 0.0.0.0 --port $PORT
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: AMAZON_AFFILIATE_TAG
+        value: harishch-21
