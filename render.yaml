@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: amazon-image-fetcher
+    name: amznpf
     runtime: node
     plan: free
     buildCommand: pnpm install --frozen-lockfile && pnpm build
